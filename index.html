@@ -48,6 +48,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .crumb { font-size:12px; color:#818aa3; }
 .crumb strong { color:var(--site-on-background); }
 .top-actions { display:flex; gap:9px; align-items:center; }
+.global-search { display:flex; align-items:center; gap:9px; margin:-12px 0 24px; }
+.global-search .field { max-width:520px; font-size:13px; }
+.global-search-hint { color:light-dark(#818aa3,#a4acc5); font-size:11px; }
 .icon-btn,.profile { border:1px solid light-dark(#e4e7f1,#30364d); color:var(--site-on-background); background:light-dark(#fff,#171d31); border-radius:12px; min-height:40px; padding:0 12px; }
 .profile { display:flex; align-items:center; gap:9px; font-size:12px; font-weight:750; }
 .avatar { width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:#e6e2ff;color:#5141d4; }
@@ -175,6 +178,7 @@ textarea.field { min-height:150px; resize:vertical; line-height:1.65; }
     </aside>
     <main class="main">
       <div class="topbar"><div class="crumb">Workspace&nbsp; / &nbsp;<strong id="crumb">Dashboard</strong></div><div class="top-actions"><button class="icon-btn" id="theme-toggle" title="Toggle appearance" aria-label="Toggle appearance">◐</button><button class="profile" id="profile-btn"><span class="avatar">S</span><span class="profile-label">My study space</span></button></div></div>
+      <div class="global-search"><input class="field" id="global-search" type="search" placeholder="Find a study set or tool…" aria-label="Find a study set or tool"><span class="global-search-hint">Type a topic or feature, then press Enter</span></div>
       <section class="view" id="view-dashboard">
         <div class="page-title"><div><div class="eyebrow">Your personal study space</div><h1>Make today count.</h1><p class="subtitle">A little practice. A lot of progress. Let's get into it.</p></div><button class="primary-btn" data-action="create">＋ Create a study set</button></div>
         <div class="grid stats">
@@ -335,6 +339,7 @@ function setAllSelects(id){["flash-set","learn-set","test-set","match-set","writ
 function renderAll(){renderStats();renderSetCards("recent-sets");renderSetCards("all-sets");["flash-set","learn-set","test-set","match-set","write-set","share-set-select"].forEach(setOptions);initFlash();initLearn();initMatch();initWrite();renderProfileOptions();$("planner-date").textContent=new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"});}
 const viewNames={dashboard:"Dashboard",sets:"My study sets",discover:"Discover sets",create:"Create a study set",flashcards:"Flashcards",learn:"Learn mode",match:"Match game",test:"Test yourself",write:"Write practice",planner:"Study planner",progress:"My progress",community:"Profiles & sharing"};
 function go(name){if(!viewNames[name])return;document.querySelectorAll(".view").forEach(v=>v.classList.add("hidden"));$("view-"+name).classList.remove("hidden");$("crumb").textContent=viewNames[name];document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===name));if(name==="sets")renderSetCards("all-sets",$("set-search").value);if(name==="progress"||name==="planner")renderStats();window.scrollTo({top:0,behavior:"smooth"})}
+$("global-search").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const q=$("global-search").value.trim().toLowerCase();if(!q)return;const set=sets.find(s=>s.title.toLowerCase().includes(q)||s.terms.some(t=>t.term.toLowerCase().includes(q)||t.definition.toLowerCase().includes(q)));if(set){setAllSelects(set.id);go("flashcards");toast(`Opening flashcards for ${set.title}.`);return}const view=Object.entries(viewNames).find(([key,label])=>key.includes(q)||label.toLowerCase().includes(q));if(view){go(view[0]);return}const aliases=[[/flash|card/,"flashcards"],[/quiz|test/,"test"],[/match|game/,"match"],[/write|writing/,"write"],[/plan|schedule/,"planner"],[/progress|stats|score/,"progress"],[/share|profile/,"community"],[/discover|search/,"discover"],[/create|new set/,"create"],[/my set|library/,"sets"]];const match=aliases.find(([re])=>re.test(q));if(match){if(match[1]==="create")createSet();else go(match[1]);return}toast("No match found. Try a set name or a study mode.")});
 document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.view)));
 function parseTerms(text){return text.split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>{let parts=line.split(/\s+[—–-]\s+|\s*:\s*|\t/);if(parts.length<2){const idx=line.indexOf(" - ");if(idx>0)parts=[line.slice(0,idx),line.slice(idx+3)]}return {term:(parts.shift()||"").trim(),definition:parts.join(" ").trim()}}).filter(t=>t.term&&t.definition)}
 function createSet(){editingId=null;editorTerms=[{term:"",definition:""},{term:"",definition:""}];$("set-title").value="";$("create-heading").textContent="Create a study set.";renderEditor();go("create")}
